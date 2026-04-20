@@ -9,10 +9,10 @@ on:
         required: false
         default: gechr
       tag:
-        description: "Tag to verify. Defaults to the ref that triggered the caller."
+        description: "Tag to verify. Defaults to the ref that triggered the caller (`github.ref_name`)."
         type: string
         required: false
-        default: ${{ github.ref_name }}
+        default: ""
       key-index:
         description: "Index into the user's GPG keys array. Defaults to the first key."
         type: number
@@ -46,7 +46,7 @@ jobs:
         name: Import GPG key and verify tag
         env:
           GH_USER: ${{ inputs.github-user }}
-          TAG: ${{ inputs.tag }}
+          TAG: ${{ inputs.tag || github.ref_name }}
           KEY_INDEX: ${{ inputs.key-index }}
         run: |
           # Fetch the user's published GPG keys and import the selected one.
