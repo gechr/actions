@@ -1,0 +1,80 @@
+name: verify-tag
+
+on:
+  workflow_call:
+    inputs:
+      github-user:
+        description: "GitHub user whose published GPG key(s) authorize the tag signature."
+        type: string
+        required: true
+      tag:
+        description: "Tag to verify. Defaults to the ref that triggered the caller."
+        type: string
+        required: false
+        default: ${{ github.ref_name }}
+      key-index:
+        description: "Index into the user's GPG keys array. Defaults to the first key."
+        type: number
+        required: false
+        default: 0
+    outputs:
+      signer:
+        description: "Signer's full name (uid without email) parsed from GPG."
+        value: ${{ jobs.verify.outputs.signer }}
+      fingerprint:
+        description: "Fingerprint of the key that produced the signature."
+        value: ${{ jobs.verify.outputs.fingerprint }}
+
+permissions: {}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      signer: ${{ steps.verify.outputs.signer }}
+      fingerprint: ${{ steps.verify.outputs.fingerprint }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: verify
+        name: Import GPG key and verify tag
+        env:
+          GH_USER: ${{ inputs.github-user }}
+          TAG: ${{ inputs.tag }}
+          KEY_INDEX: ${{ inputs.key-index }}
+        run: |
+          # Fetch the user's published GPG keys and import the selected one.
+          KEYS_JSON=$(curl -sf "https://api.github.com/users/${GH_USER}/gpg_keys")
+          echo "$KEYS_JSON" | jq -r ".[${KEY_INDEX}].raw_key" | gpg --quiet --import
+          ALLOWED_FINGERPRINT=$(gpg --list-keys --with-colons | awk -F: '/^fpr:/ {print $10; exit}')
+
+          # Verify the tag signature.
+          GPG_OUTPUT=$(git verify-tag --raw "$TAG" 2>&1 || true)
+          SIGNING_FINGERPRINT=$(echo "$GPG_OUTPUT" | awk '/VALIDSIG/ {print $3}')
+          # GOODSIG / EXPKEYSIG / EXPSIG all share the same `<keyid> <user>` tail;
+          # extract the signer from whichever one fires, then drop the trailing
+          # `<email>` so only the human-readable name is printed.
+          SIGNER_NAME=$(echo "$GPG_OUTPUT" | awk '/(GOODSIG|EXPKEYSIG|EXPSIG)/ {$1=$2=$3=""; print substr($0,4); exit}' | sed 's/ <[^>]*>$//')
+
+          if [[ "$SIGNING_FINGERPRINT" != "$ALLOWED_FINGERPRINT" ]]; then
+            echo "::error::Tag $TAG is signed with unauthorized key: $SIGNING_FINGERPRINT (expected: $ALLOWED_FINGERPRINT)"
+            exit 1
+          fi
+
+          if echo "$GPG_OUTPUT" | grep -q '^\[GNUPG:\] EXPKEYSIG '; then
+            echo "::error::Tag $TAG is signed with an expired key ($SIGNING_FINGERPRINT)."
+            exit 1
+          fi
+          if echo "$GPG_OUTPUT" | grep -q '^\[GNUPG:\] REVKEYSIG '; then
+            echo "::error::Tag $TAG is signed with a revoked key ($SIGNING_FINGERPRINT)."
+            exit 1
+          fi
+
+          echo "Verified tag [$TAG] - signer: $SIGNER_NAME"
+          echo "signer=$SIGNER_NAME" >> "$GITHUB_OUTPUT"
+          echo "fingerprint=$SIGNING_FINGERPRINT" >> "$GITHUB_OUTPUT"

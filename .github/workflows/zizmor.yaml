@@ -1,0 +1,68 @@
+name: 🌈 zizmor
+
+on:
+  # Self-test when PRs touch this repo.
+  pull_request:
+
+  # Reusable entry point for other repos:
+  #   uses: gechr/actions/.github/workflows/zizmor.yaml@<ref>
+  workflow_call:
+    inputs:
+      config:
+        description: Path to custom zizmor config file.
+        type: string
+        default: ""
+      min-severity:
+        description: Threshold for findings (anything below is ignored).
+        type: string
+        default: medium
+      persona:
+        description: Posture to apply audits (regular | pedantic | auditor).
+        type: string
+        default: pedantic
+      version:
+        description: Version of zizmor to use.
+        type: string
+        default: latest
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zizmor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      # Stage a default config under .git/ so the workspace stays clean for
+      # downstream steps. Only written when the caller didn't supply one.
+      - name: Write default zizmor config
+        if: inputs.config == ''
+        run: |
+          cat > .git/zizmor.yml << 'EOF'
+          rules:
+            undocumented-permissions:
+              disable: true
+            unpinned-uses:
+              config:
+                policies:
+                  "*": hash-pin
+          EOF
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@71321a20a9ded102f6e9ce5718a2fcec2c4f70d8 # v0.5.2
+        with:
+          inputs: ./.github/
+          config: ${{ inputs.config || '.git/zizmor.yml' }}
+          min-severity: ${{ inputs.min-severity || 'medium' }}
+          persona: ${{ inputs.persona || 'pedantic' }}
+          version: ${{ inputs.version || 'latest' }}
