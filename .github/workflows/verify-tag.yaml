@@ -6,7 +6,8 @@ on:
       github-user:
         description: "GitHub user whose published GPG key(s) authorize the tag signature."
         type: string
-        required: true
+        required: false
+        default: gechr
       tag:
         description: "Tag to verify. Defaults to the ref that triggered the caller."
         type: string

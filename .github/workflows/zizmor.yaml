@@ -1,7 +1,9 @@
 name: 🌈 zizmor
 
 on:
-  # Self-test when PRs touch this repo.
+  push:
+    branches:
+      - main
   pull_request:
 
   # Reusable entry point for other repos:
