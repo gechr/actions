@@ -1,6 +1,6 @@
 name: zizmor
 
-on:
+on: # zizmor: ignore[concurrency-limits] reusable; callers define concurrency
   push:
     branches:
       - main
@@ -32,10 +32,6 @@ on:
         default: latest
 
 permissions: {}
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   zizmor:
