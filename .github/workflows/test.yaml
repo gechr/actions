@@ -1,0 +1,60 @@
+name: test
+
+on:
+  # Reusable entry point for other repos:
+  #   uses: gechr/actions/.github/workflows/test.yaml@<ref>
+  workflow_call:
+    inputs:
+      language:
+        description: "Project language: 'go' or 'rust'."
+        type: string
+        required: true
+      apt-packages:
+        description: "Space-separated apt packages to install before testing (Linux runners only)."
+        type: string
+        required: false
+        default: ""
+      runs-on:
+        description: "JSON array of runner labels to matrix the test job over."
+        type: string
+        required: false
+        default: '["ubuntu-latest"]'
+
+permissions: {}
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.runs-on) }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      # Go projects test against the toolchain pinned in go.mod. Rust projects
+      # rely on the toolchain preinstalled on the runner, so no setup is needed.
+      - name: Set up Go
+        if: inputs.language == 'go'
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      # Opt-in extra system dependencies (e.g. shells for completion tests).
+      # Guarded to Linux so a Windows leg in the matrix stays unaffected.
+      - name: Install apt packages
+        if: inputs.apt-packages != '' && runner.os == 'Linux'
+        env:
+          APT_PACKAGES: ${{ inputs.apt-packages }}
+        # APT_PACKAGES is intentionally unquoted so a space-separated list
+        # word-splits into multiple package arguments.
+        run: sudo apt-get update && sudo apt-get install -y $APT_PACKAGES
+
+      - name: Test
+        run: make test
