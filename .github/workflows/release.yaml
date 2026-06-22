@@ -26,7 +26,7 @@ jobs:
   verify-tag:
     permissions:
       contents: read
-    uses: gechr/actions/.github/workflows/verify-tag.yaml@d312df23aa0a2e809547cf08034ee3522ddd6be9 # v0.0.3
+    uses: gechr/actions/.github/workflows/verify-tag.yaml@a0dfaeb072753c3d48cd4df5fdacfd035b2281bf # v0.2.4
 
   publish:
     needs: verify-tag
