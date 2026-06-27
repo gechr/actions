@@ -19,6 +19,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
+        # clover: provider=auto
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
@@ -27,6 +28,7 @@ jobs:
       # rely on the toolchain preinstalled on the runner, so no setup is needed.
       - name: Set up Go
         if: inputs.language == 'go'
+        # clover: provider=auto
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: go.mod
