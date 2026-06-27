@@ -2,9 +2,10 @@ name: release
 
 on:
   # Reusable entry point for other repos. Callers trigger on tag push and
-  # forward their secrets:
+  # forward only the secret this workflow needs:
   #   uses: gechr/actions/.github/workflows/release.yaml@<ref>
-  #   secrets: inherit
+  #   secrets:
+  #     RELEASER_APP_PRIVATE_KEY: ${{ secrets.RELEASER_APP_PRIVATE_KEY }}
   workflow_call:
     inputs:
       language:
@@ -18,6 +19,10 @@ on:
       desc:
         description: "One-line description for the Homebrew formula."
         type: string
+        required: true
+    secrets:
+      RELEASER_APP_PRIVATE_KEY:
+        description: "Private key for the releaser GitHub App."
         required: true
 
 permissions: {}
