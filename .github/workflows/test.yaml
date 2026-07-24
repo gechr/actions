@@ -38,7 +38,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        # clover: provider=auto
+        # @clover
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -47,7 +47,7 @@ jobs:
       # rely on the toolchain preinstalled on the runner, so no setup is needed.
       - name: Set up Go
         if: inputs.language == 'go'
-        # clover: provider=auto
+        # @clover
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
@@ -66,7 +66,7 @@ jobs:
       # Nushell isn't an apt package, so it gets its own opt-in setup step.
       - name: Set up Nushell
         if: inputs.setup-nu
-        # clover: provider=auto
+        # @clover
         uses: hustcer/setup-nu@ccd5bb5426b05a32009c2ba967946231f3919c97 # v3.25
         with:
           version: "*"
