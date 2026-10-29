@@ -6,7 +6,7 @@ on:
   workflow_call:
     inputs:
       language:
-        description: "Project language: 'go' or 'rust'."
+        description: "Project language: 'go', 'rust' or 'swift'."
         type: string
         required: true
       apt-packages:
@@ -52,6 +52,15 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+
+      # Swift projects test against the latest stable Xcode on GitHub-hosted
+      # macOS runners. Custom runners (e.g. xcode-27) ship their own Xcode.
+      - name: Set up Xcode
+        if: inputs.language == 'swift' && startsWith(matrix.os, 'macos-')
+        # @clover
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+        with:
+          xcode-version: latest-stable
 
       # Opt-in extra system dependencies (e.g. shells for completion tests).
       # Guarded to Linux so a Windows leg in the matrix stays unaffected.

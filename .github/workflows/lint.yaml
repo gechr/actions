@@ -6,15 +6,20 @@ on:
   workflow_call:
     inputs:
       language:
-        description: "Project language: 'go' or 'rust'."
+        description: "Project language: 'go', 'rust' or 'swift'."
         type: string
         required: true
+      runs-on:
+        description: "Runner label to lint on."
+        type: string
+        required: false
+        default: ubuntu-latest
 
 permissions: {}
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     permissions:
       contents: read
     steps:
@@ -33,6 +38,13 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+
+      # Swift projects lint with SwiftLint and SwiftFormat from Homebrew.
+      - name: Install Swift linters
+        if: inputs.language == 'swift'
+        run: |
+          brew update
+          brew install swiftlint swiftformat
 
       - name: Lint
         run: make lint
