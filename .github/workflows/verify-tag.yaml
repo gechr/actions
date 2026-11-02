@@ -46,12 +46,25 @@ jobs:
       - id: verify
         name: Import GPG key and verify tag
         env:
+          GH_TOKEN: ${{ github.token }}
           GH_USER: ${{ inputs.github-user }}
           TAG: ${{ inputs.tag || github.ref_name }}
           KEY_INDEX: ${{ inputs.key-index }}
         run: |
           # Fetch the user's published GPG keys and import the selected one.
-          KEYS_JSON=$(curl -sf "https://api.github.com/users/${GH_USER}/gpg_keys")
+          MAX_ATTEMPTS=5
+          for ((attempt = 1; ; attempt++)); do
+            if KEYS_JSON=$(gh api "users/${GH_USER}/gpg_keys"); then
+              break
+            fi
+            if ((attempt >= MAX_ATTEMPTS)); then
+              echo "::error::Failed to fetch GPG keys for ${GH_USER} after ${MAX_ATTEMPTS} attempts."
+              exit 1
+            fi
+            delay=$((attempt * 10))
+            echo "::warning::Fetching GPG keys for ${GH_USER} failed (attempt ${attempt}/${MAX_ATTEMPTS}); retrying in ${delay}s."
+            sleep "$delay"
+          done
           echo "$KEYS_JSON" | jq -r ".[${KEY_INDEX}].raw_key" | gpg --quiet --import
           ALLOWED_FINGERPRINT=$(gpg --list-keys --with-colons | awk -F: '/^fpr:/ {print $10; exit}')
 
