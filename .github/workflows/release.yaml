@@ -20,6 +20,10 @@ on:
         description: "One-line description for the Homebrew formula."
         type: string
         required: true
+      completions:
+        description: "Generate shell completions in the Homebrew formula. Disable for binaries without a completion flag."
+        type: boolean
+        default: true
     secrets:
       RELEASER_APP_PRIVATE_KEY:
         description: "Private key for the releaser GitHub App."
@@ -111,6 +115,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           version: ${{ github.ref_name }}
           homepage: https://github.com/${{ github.repository }}
+          completion-args: ${{ inputs.completions && '--print-completion' || '' }}
 
       - name: Publish Homebrew formula (Rust)
         if: inputs.language == 'rust'
@@ -124,5 +129,5 @@ jobs:
           homepage: https://github.com/${{ github.repository }}
           head-depends-on: rust
           head-build-binary: target/release/${{ inputs.name }}
-          completion-args: "--completions"
+          completion-args: ${{ inputs.completions && '--completions' || '' }}
           shell-parameter-format: ""
