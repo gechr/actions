@@ -36,7 +36,7 @@ jobs:
     permissions:
       contents: read
     # @clover
-    uses: gechr/actions/.github/workflows/verify-tag.yaml@b90a8ef9841510cc6325daf17d38e768d57d17b3 # v0.2.12
+    uses: gechr/actions/.github/workflows/verify-tag.yaml@68bad8ed683a148c69d6ae944f128b77e1a6a9db # v0.2.13
 
   publish:
     needs: verify-tag
@@ -83,7 +83,7 @@ jobs:
       - name: Install cargo-zigbuild
         if: inputs.language == 'rust'
         # @clover
-        uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
+        uses: taiki-e/install-action@ab49d3c64680143e184118bed66a46419fc15519 # v2.90.5
         with:
           tool: cargo-zigbuild
 
